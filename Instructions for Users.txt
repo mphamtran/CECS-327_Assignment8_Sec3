@@ -1,0 +1,9 @@
+Run python files in Pycharm or preferred IDE.
+Server Instructions:
+1. Enter a port number to use.
+
+Client Instructions:
+1. Enter the server's port number.
+2. Enter the server's ip address.
+3. Enter the message you want to send the server.
+4. To quit type q
