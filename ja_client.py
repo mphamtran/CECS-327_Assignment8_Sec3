@@ -36,7 +36,7 @@ def start_client():
                 elif choice in VALID_QUERIES.values():
                     message = choice
                 else:
-                    print("❌ Invalid query. Please try one of the listed options.")
+                    print(" Invalid query. Please try one of the listed options.")
                     continue
 
                 # Send the valid query to the server
@@ -44,7 +44,7 @@ def start_client():
 
                 # Receive and print the response
                 response = client_socket.recv(4096).decode()
-                print(f"\n✅ Server reply:\n{response}\n")
+                print(f"\n Server reply:\n{response}\n")
 
     except ValueError:
         print("Invalid port number. Please enter a valid port.")
