@@ -46,19 +46,39 @@ def handle_query(query):
         # Query 3: Electricity comparison
         elif "consumed more electricity" in query.lower():
             cur.execute("""
-                SELECT payload->>'asset_uid' AS device,
-                       SUM((payload->>'Ammeter 2')::float) AS total_amps
+                SELECT
+                    payload->>'parent_asset_uid' AS device,
+                    SUM(
+                        COALESCE((payload::jsonb->>'Ammeter 1')::float, 0) +
+                        COALESCE((payload::jsonb->>'Ammeter 2')::float, 0) +
+                        COALESCE((payload::jsonb->>'sensor 2 d84ed403-486c-417d-ae0b-bd73664ff426')::float, 0)
+                    ) AS total_amps
                 FROM "Data_virtual"
-                WHERE payload::jsonb ? 'Ammeter 2'
+                WHERE
+                    payload::jsonb ? 'Ammeter 1'
+                    OR payload::jsonb ? 'Ammeter 2'
+                    OR payload::jsonb ? 'sensor 2 d84ed403-486c-417d-ae0b-bd73664ff426'
                 GROUP BY device
                 ORDER BY total_amps DESC
-                LIMIT 3;
+                LIMIT 1;
             """)
             results = cur.fetchall()
-            reply = "Total electricity usage (by Amps):\n"
-            for row in results:
-                reply += f"- Device {row[0]}: {row[1]:.2f} A\n"
-            return reply
+            if results:
+                device, total_amps = results[0]
+                kwh = total_amps * 0.002
+
+                # Step 2: Get human-readable name from metadata
+                cur.execute("""
+                    SELECT "assetType"
+                    FROM "Data_metadata"
+                    WHERE "assetUid" = %s;
+                """, (device,))
+                name_result = cur.fetchone()
+                device_name = name_result[0] if name_result else device
+
+                return f"{device_name} used the most electricity: {kwh:.4f} kWh"
+            else:
+                return "No electricity data available."
 
         else:
             return "Unknown query."
