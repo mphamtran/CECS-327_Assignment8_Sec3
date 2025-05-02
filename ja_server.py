@@ -15,7 +15,7 @@ DB_CONFIG = {
 # Convert UTC time to PST
 def convert_to_pst(utc_time):
     pst = pytz.timezone("America/Los_Angeles")
-    return utc_time.astimezone(pst).strftime("%Y-%m-%d %I:%M %p %Z")
+    return utc_time.astimezone(pst)
 
 def handle_query(query):
     try:
@@ -25,13 +25,24 @@ def handle_query(query):
         # Query 1: Moisture (past 3 hours)
         if "average moisture" in query.lower():
             cur.execute("""
-                SELECT AVG((payload->>'Moisture')::float)
+                SELECT AVG((payload->>'Moisture Meter - Moisture Meter')::float)
                 FROM "Data_virtual"
-                WHERE payload::jsonb ? 'Moisture'
-                  AND time > NOW() - INTERVAL '3 hours';
+                WHERE payload::jsonb ? 'Moisture Meter - Moisture Meter'
+                    AND time > timezone('America/Los_Angeles', now()) - INTERVAL '3 hours';
             """)
             result = cur.fetchone()[0]
-            return f"Average fridge moisture over past 3 hours: {result:.2f}% RH (PST time)."
+
+            if result is None:
+                return "No moisture data available yet."
+            else:
+                now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
+                now_pst = convert_to_pst(now_utc)
+                start_pst = now_pst - timedelta(hours=3)
+
+                time_range = f"{start_pst.strftime('%I:%M %p')} to {now_pst.strftime('%I:%M %p')} (PST)"
+
+                return f"Average fridge moisture over past 3 hours: {result:.2f}% RH.\n" \
+                       f"Reading from: {time_range}"
 
         # Query 2: Water consumption
         elif "average water consumption" in query.lower():
