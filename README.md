@@ -17,7 +17,7 @@ This project demonstrates a Python-based client-server system that queries real-
 All database credentials are defined in the DB_CONFIG section of server.py.  
 - Open your project dashboard in Neon and click 'Connect'  
 - Find your connection string: postgresql://<user>:<password>@<host>/neondb?sslmode=require  
-- Replace `user`, `password`, and `host` with your own credentials from your connection string  
+- Replace `user`, `password`, and `host` in server.py with your own credentials from your connection string  
 - dbname: neondb  
 - port: 5432  
 
